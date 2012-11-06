@@ -3,9 +3,11 @@ var falafel = require('falafel');
 module.exports = function (src) {
     var scopeName = '__' + (Math.pow(16, 8) * Math.random()).toString(16);
     var scope = {};
-    var fns = [];
     
-    var out = falafel(String(falafel(src, rewriteVars)), rewriteIds);
+    var out = [ rewriteVars, rewriteIds ].reduce(function (src, fn) {
+        return String(falafel(src, fn));
+    }, src);
+    
     return 'function () {\n'
         + 'var ' + scopeName + '='
         + JSON.stringify(Object.keys(scope).reduce(function (acc, key) {
