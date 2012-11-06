@@ -39,12 +39,6 @@ module.exports = function (src) {
                 return d.source();
             }).join(',') + ';');
         }
-        else if (isFunction(node)) {
-            var id = getScope(node);
-            node.params.forEach(function (p) {
-                scope[id][p.name] = p;
-            });
-        }
     }
     
     function rewriteIds (node) {
@@ -53,10 +47,6 @@ module.exports = function (src) {
             if (id === undefined) return;
             var sid = JSON.stringify(id);
             node.update(names.scope + '[' + sid + '].' + node.name);
-        }
-        else if (node.type === 'Identifier'
-        && node.parent.type === 'FunctionDeclaration') {
-console.dir([ keyOf(node.parent), node.source() ]); 
         }
     }
     

@@ -8,6 +8,7 @@ function foo (n) {
         var f = function () {
             var q = y * 10;
             var x = z + 2;
+            return q + x;
         };
         return f(z);
     })();
