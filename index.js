@@ -1,17 +1,20 @@
 var falafel = require('falafel');
 
 module.exports = function (src) {
+    var scopeName = '__' + (Math.pow(16, 8) * Math.random()).toString(16);
     var scope = {};
     var fns = [];
     
     var out = falafel(String(falafel(src, rewriteVars)), rewriteIds);
-    return 'var __scope='
+    return 'function () {\n'
+        + 'var ' + scopeName + '='
         + JSON.stringify(Object.keys(scope).reduce(function (acc, key) {
             acc[key] = {};
             return acc;
         }, {}))
         + ';\n'
         + out
+        + ';return {scope:' + scopeName + '}}'
     ;
     
     function rewriteVars (node) {
@@ -26,9 +29,9 @@ module.exports = function (src) {
     }
     
     function rewriteIds (node) {
-        if (node.type === 'Identifier') {
-            var id = lookup(node);
-            node.update('__scope[' + JSON.stringify(id) + '].' + node.name);
+        if (node.type === 'Identifier' && !isFunction(node.parent)) {
+            var id = JSON.stringify(lookup(node));
+            node.update(scopeName + '[' + id + '].' + node.name);
         }
     }
     
