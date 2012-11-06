@@ -2,6 +2,8 @@
 
 modify nested scope at runtime
 
+[![build status](https://secure.travis-ci.org/substack/scoper.png)](http://travis-ci.org/substack/scoper)
+
 # example
 
 ## modify
