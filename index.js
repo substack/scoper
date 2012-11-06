@@ -26,7 +26,7 @@ module.exports = function (src) {
             node.update(node.declarations.map(function (d) {
                 scope[id][d.id.name] = d;
                 return d.source();
-            }).join(','));
+            }).join(',') + ';');
         }
     }
     
