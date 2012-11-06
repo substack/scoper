@@ -33,10 +33,9 @@ module.exports = function (src) {
         + Object.keys(literal).map(function (id) {
             return JSON.stringify(id) + ':' + '[' + literal[id].join(',') + ']'
         }, '').join(',\n') + '};\n'
-        + out
         + ';return {' + Object.keys(names).map(function (name) {
             return JSON.stringify(name) + ':' + names[name];
-        })
+        }) + ',run:function(){' + out + '}'
         + '}})()'
     ;
     
