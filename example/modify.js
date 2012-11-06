@@ -6,5 +6,5 @@ var c = Function('return ' + scoper(src))();
 c.run();
 
 setInterval(function () {
-    //c.literal['body.1'][0] += 10;
+    c.literal['body.1'][0] += 10;
 }, 500);
