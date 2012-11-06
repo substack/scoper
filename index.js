@@ -21,7 +21,7 @@ module.exports = function (src) {
             node.update(node.declarations.map(function (d) {
                 scope[id][d.id.name] = d;
                 return d.source();
-            }).join(',') + ';\n');
+            }).join(','));
         }
     }
     
@@ -49,6 +49,10 @@ module.exports = function (src) {
             p = p.parent
         );
         var id = idOf(node);
+        if (node.type === 'VariableDeclaration') {
+            // the var gets stripped off so the id needs updated
+            id = id.replace(/\.init$/, '.right');
+        }
         if (!scope[id]) scope[id] = {};
         return id;
     }
@@ -64,6 +68,8 @@ function isFunction (x) {
 function idOf (node) {
     var id = [];
     for (var n = node; n.type !== 'Program'; n = n.parent) {
+        if (!isFunction(n)) continue;
+        
         var p = n.parent;
         var kv = Object.keys(p)
             .reduce(function (acc, key) {
@@ -80,7 +86,7 @@ function idOf (node) {
         ;
         var ix = kv.values.indexOf(n);
         var key = kv.keys[ix];
-        id.push(key);
+        id.unshift(key);
     }
     return id.join('.');
 }
