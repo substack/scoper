@@ -1,22 +1,33 @@
 var falafel = require('falafel');
 
 module.exports = function (src) {
-    var scopeName = '__' + (Math.pow(16, 8) * Math.random()).toString(16);
+    var names = [ 'scope', 'fn' ].reduce(function (acc, name) {
+        acc[name] = '__' + (Math.pow(16, 8) * Math.random()).toString(16);
+        return acc;
+    }, {});
+    
     var scope = {};
+    var fns = {};
     
-    var out = [ rewriteVars, rewriteIds ].reduce(function (src, fn) {
-        return String(falafel(src, fn));
-    }, src);
+    var out = [ rewriteVars, rewriteIds, normalizeFns ]
+        .reduce(function (src, fn) {
+            return String(falafel(src, fn));
+        }, src)
+    ;
     
-    return 'function () {\n'
-        + 'var ' + scopeName + '='
+    return '(function () {\n'
+        + 'var ' + names.scope + '='
         + JSON.stringify(Object.keys(scope).reduce(function (acc, key) {
             acc[key] = {};
             return acc;
         }, {}))
         + ';\n'
+        + 'var ' + names.fn + '={'
+        + Object.keys(fns).map(function (id) {
+            return JSON.stringify(id) + ':' + fns[id]
+        }, '').join(',\n') + '};\n'
         + out
-        + ';return {scope:' + scopeName + '}}'
+        + ';return {scope:' + names.scope + ',fn:' + names.fn + '}})()'
     ;
     
     function rewriteVars (node) {
@@ -33,7 +44,17 @@ module.exports = function (src) {
     function rewriteIds (node) {
         if (node.type === 'Identifier' && !isFunction(node.parent)) {
             var id = JSON.stringify(lookup(node));
-            node.update(scopeName + '[' + id + '].' + node.name);
+            node.update(names.scope + '[' + id + '].' + node.name);
+        }
+    }
+    
+    function normalizeFns (node) {
+        if (isFunction(node)) {
+            var id = idOf(node);
+            fns[id] = node.source();
+            node.body.update(
+                '{return ' + names.fn + '[' + JSON.stringify(id) + ']()}'
+            );
         }
     }
     
