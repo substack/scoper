@@ -1,13 +1,16 @@
 var falafel = require('falafel');
 
 module.exports = function (src) {
-    var names = [ 'scope', 'fn' ].reduce(function (acc, name) {
-        acc[name] = '__' + (Math.pow(16, 8) * Math.random()).toString(16);
-        return acc;
-    }, {});
+    var names = [ 'scope', 'function', 'literal' ]
+        .reduce(function (acc, name) {
+            acc[name] = '__' + (Math.pow(16, 8) * Math.random()).toString(16);
+            return acc;
+        }, {})
+    ;
     
     var scope = {};
     var fns = {};
+    var literal = {};
     
     var out = [ rewriteVars, rewriteIds, normalizeFns ]
         .reduce(function (src, fn) {
@@ -22,12 +25,19 @@ module.exports = function (src) {
             return acc;
         }, {}))
         + ';\n'
-        + 'var ' + names.fn + '={'
+        + 'var ' + names['function'] + '={'
         + Object.keys(fns).map(function (id) {
             return JSON.stringify(id) + ':' + fns[id]
         }, '').join(',\n') + '};\n'
+        + 'var ' + names.literal + '={'
+        + Object.keys(literal).map(function (id) {
+            return JSON.stringify(id) + ':' + '[' + literal[id].join(',') + ']'
+        }, '').join(',\n') + '};\n'
         + out
-        + ';return {scope:' + names.scope + ',fn:' + names.fn + '}})()'
+        + ';return {' + Object.keys(names).map(function (name) {
+            return JSON.stringify(name) + ':' + names[name];
+        })
+        + '}})()'
     ;
     
     function rewriteVars (node) {
@@ -38,6 +48,15 @@ module.exports = function (src) {
                 scope[id][d.id.name] = d;
                 return d.source();
             }).join(',') + ';');
+        }
+        if (node.type === 'Literal') {
+            var id = getScope(node);
+            if (!literal[id]) literal[id] = [];
+            var ix = literal[id].length;
+            literal[id].push(node.source());
+            
+            var sid = JSON.stringify(id);
+            node.update(names.literal + '[' + sid + '][' + ix + ']');
         }
     }
     
@@ -55,7 +74,8 @@ module.exports = function (src) {
             var id = idOf(node);
             fns[id] = node.source();
             node.body.update('{'
-                + 'return ' + names.fn + '[' + JSON.stringify(id) + ']'
+                + 'return ' + names['function']
+                + '[' + JSON.stringify(id) + ']'
                 + '.apply(this, arguments)'
                 + '}'
             );
