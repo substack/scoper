@@ -39,9 +39,11 @@ module.exports = function (src) {
     
     function lookup (node) {
         for (var p = node; p; p = p.parent) {
-            var id = getScope(p);
-            if (scope[id][node.name]) {
-                return id;
+            if (isFunction(p) || p.type === 'Program') {
+                var id = getScope(p);
+                if (scope[id][node.name]) {
+                    return id;
+                }
             }
         }
         return '';
