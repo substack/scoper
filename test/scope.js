@@ -22,6 +22,6 @@ test('modify a literal', function (t) {
     });
     c.run();
     
-    c.literal[''][1] += 100;
+    c.literal['body.1'][0] += 100;
     c.run();
 });

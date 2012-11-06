@@ -36,7 +36,9 @@ module.exports = function (src) {
         + ';return {' + Object.keys(names).map(function (name) {
             return JSON.stringify(name) + ':' + names[name];
         }) + ',run:function(){' + out + '}'
-        + '}})()'
+        + '};\n'
+        + out // duplicate at the end won't execute, but needed for hoisting
+        + '})()'
     ;
     
     function rewriteVars (node) {

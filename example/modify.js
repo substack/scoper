@@ -1,7 +1,10 @@
 var fs = require('fs');
 var scoper = require('../');
 
-var src = fs.readFileSync(process.argv[2], 'utf8');
+var src = fs.readFileSync(__dirname + '/source.js', 'utf8');
 var c = Function('return ' + scoper(src))();
-console.dir(c);
 c.run();
+
+setInterval(function () {
+    //c.literal['body.1'][0] += 10;
+}, 500);
