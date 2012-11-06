@@ -14,4 +14,6 @@ function foo (n) {
     })();
 }
 
-console.log(foo(32));
+(function () {
+    console.log(foo(32));
+})();
