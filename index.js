@@ -39,12 +39,24 @@ module.exports = function (src) {
                 return d.source();
             }).join(',') + ';');
         }
+        else if (isFunction(node)) {
+            var id = getScope(node);
+            node.params.forEach(function (p) {
+                scope[id][p.name] = p;
+            });
+        }
     }
     
     function rewriteIds (node) {
         if (node.type === 'Identifier' && !isFunction(node.parent)) {
-            var id = JSON.stringify(lookup(node));
-            node.update(names.scope + '[' + id + '].' + node.name);
+            var id = lookup(node);
+            if (id === undefined) return;
+            var sid = JSON.stringify(id);
+            node.update(names.scope + '[' + sid + '].' + node.name);
+        }
+        else if (node.type === 'Identifier'
+        && node.parent.type === 'FunctionDeclaration') {
+console.dir([ keyOf(node.parent), node.source() ]); 
         }
     }
     
@@ -52,8 +64,10 @@ module.exports = function (src) {
         if (isFunction(node)) {
             var id = idOf(node);
             fns[id] = node.source();
-            node.body.update(
-                '{return ' + names.fn + '[' + JSON.stringify(id) + ']()}'
+            node.body.update('{'
+                + 'return ' + names.fn + '[' + JSON.stringify(id) + ']'
+                + '.apply(this, arguments)'
+                + '}'
             );
         }
     }
@@ -67,7 +81,7 @@ module.exports = function (src) {
                 }
             }
         }
-        return '';
+        return undefined;
     }
     
     function getScope (node) {
@@ -97,24 +111,33 @@ function idOf (node) {
     var id = [];
     for (var n = node; n.type !== 'Program'; n = n.parent) {
         if (!isFunction(n)) continue;
-        
-        var p = n.parent;
-        var kv = Object.keys(p)
-            .reduce(function (acc, key) {
-                if (Array.isArray(p[key])) {
-                    acc.keys.push.apply(acc.keys, Object.keys(p[key]));
-                    acc.values.push.apply(acc.values, p[key]);
-                }
-                else {
-                    acc.keys.push(key);
-                    acc.values.push(p[key]);
-                }
-                return acc;
-            }, { keys : [], values : [] })
-        ;
-        var ix = kv.values.indexOf(n);
-        var key = kv.keys[ix];
+        var key = keyOf(n).join('.');
         id.unshift(key);
     }
     return id.join('.');
+}
+
+function keyOf (node) {
+    var p = node.parent;
+    var kv = Object.keys(p)
+        .reduce(function (acc, key) {
+            acc.keys.push(key);
+            acc.values.push(p[key]);
+            acc.top.push(undefined);
+            
+            if (Array.isArray(p[key])) {
+                var keys = Object.keys(p[key]);
+                acc.keys.push.apply(acc.keys, keys);
+                acc.values.push.apply(acc.values, p[key]);
+                acc.top.push.apply(
+                    acc.top,
+                    keys.map(function () { return key })
+                );
+            }
+            
+            return acc;
+        }, { keys : [], values : [], top : [] })
+    ;
+    var ix = kv.values.indexOf(node);
+    return [ kv.top[ix], kv.keys[ix] ].filter(Boolean);
 }
