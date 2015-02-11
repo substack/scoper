@@ -1,12 +1,11 @@
 var falafel = require('falafel');
 
 module.exports = function (src) {
-    var names = [ 'scope', 'function', 'literal' ]
-        .reduce(function (acc, name) {
-            acc[name] = '__' + (Math.pow(16, 8) * Math.random()).toString(16);
-            return acc;
-        }, {})
-    ;
+    var names = {
+        scope: rname(),
+        'function': rname(),
+        literal: rname()
+    };
     
     var scope = {};
     var fns = {};
@@ -33,9 +32,17 @@ module.exports = function (src) {
         + Object.keys(literal).map(function (id) {
             return JSON.stringify(id) + ':' + '[' + literal[id].join(',') + ']'
         }, '').join(',\n') + '};\n'
-        + ';return {' + Object.keys(names).map(function (name) {
-            return JSON.stringify(name) + ':' + names[name];
-        }) + ',run:function(){' + out + '}'
+        + ';return {'
+            + Object.keys(names).map(function (name) {
+                return JSON.stringify(name) + ':' + names[name];
+            })
+            + ',run:function(){' + out + '}'
+            + ',patch:function(opts){'
+              + 'if (!opts) opts = {};\n'
+              + 'if (opts.literal) ' + names.literal + '= opts.literal;\n'
+              + 'if (opts["function"]) ' + names['function'] + '= opts["function"];\n'
+              + 'if (opts.scope) ' + names.scope + '= opts.scope;\n'
+            + '}'
         + '};\n'
         + out // duplicate at the end won't execute, but needed for hoisting
         + '})()'
@@ -151,4 +158,8 @@ function keyOf (node) {
     ;
     var ix = kv.values.indexOf(node);
     return [ kv.top[ix], kv.keys[ix] ].filter(Boolean);
+}
+
+function rname () {
+    return '__' + (Math.pow(16, 8) * Math.random()).toString(16);
 }
