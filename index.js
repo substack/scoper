@@ -1,6 +1,8 @@
 var falafel = require('falafel');
 var idOf = require('./lib/idof.js');
 var isFunction = require('./lib/isfn.js');
+var getScope = require('./lib/getscope.js');
+var lookup = require('./lib/lookup.js');
 
 module.exports = function (src, opts) {
     if (!opts) opts = {};
@@ -54,14 +56,14 @@ module.exports = function (src, opts) {
     function rewriteVars (node) {
         if (node.type === 'VariableDeclaration') {
             // take off the leading `var `
-            var id = getScope(node);
+            var id = getScope(scope, node);
             node.update(node.declarations.map(function (d) {
                 scope[id][d.id.name] = d;
                 return d.source();
             }).join(',') + ';');
         }
         if (node.type === 'Literal') {
-            var id = getScope(node);
+            var id = getScope(scope, node);
             if (!literal[id]) literal[id] = [];
             var ix = literal[id].length;
             literal[id].push(node.source());
@@ -73,7 +75,7 @@ module.exports = function (src, opts) {
     
     function rewriteIds (node) {
         if (node.type === 'Identifier' && !isFunction(node.parent)) {
-            var id = lookup(node);
+            var id = lookup(scope, node);
             if (id === undefined) return;
             var sid = JSON.stringify(id);
             node.update(names.scope + '[' + sid + '].' + node.name);
@@ -92,34 +94,6 @@ module.exports = function (src, opts) {
             );
         }
     }
-    
-    function lookup (node) {
-        for (var p = node; p; p = p.parent) {
-            if (isFunction(p) || p.type === 'Program') {
-                var id = getScope(p);
-                if (scope[id][node.name]) {
-                    return id;
-                }
-            }
-        }
-        return undefined;
-    }
-    
-    function getScope (node) {
-        for (
-            var p = node;
-            !isFunction(p) && p.type !== 'Program';
-            p = p.parent
-        );
-        var id = idOf(node);
-        if (node.type === 'VariableDeclaration') {
-            // the var gets stripped off so the id needs updated
-            id = id.replace(/\.init$/, '.right');
-        }
-        if (!scope[id]) scope[id] = {};
-        return id;
-    }
-    
 };
 
 function rname () {
