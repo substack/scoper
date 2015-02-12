@@ -1,11 +1,13 @@
 var falafel = require('falafel');
+var idOf = require('./lib/idof.js');
+var isFunction = require('./lib/isfn.js');
 
-module.exports = function (src) {
-    var names = {
-        scope: rname(),
-        'function': rname(),
-        literal: rname()
-    };
+module.exports = function (src, opts) {
+    if (!opts) opts = {};
+    var names = opts.names || {};
+    if (!names.scope) names.scope = rname();
+    if (!names['function']) names['function'] = rname();
+    if (!names.literal) names.literal = rname();
     
     var scope = {};
     var fns = {};
@@ -36,6 +38,7 @@ module.exports = function (src) {
             + Object.keys(names).map(function (name) {
                 return JSON.stringify(name) + ':' + names[name];
             })
+            + ',names:' + JSON.stringify(names)
             + ',run:function(){' + out + '}'
             + ',patch:function(opts){'
               + 'if (!opts) opts = {};\n'
@@ -118,47 +121,6 @@ module.exports = function (src) {
     }
     
 };
-
-function isFunction (x) {
-    return x.type === 'FunctionDeclaration'
-        || x.type === 'FunctionExpression'
-    ;
-}
-
-function idOf (node) {
-    var id = [];
-    for (var n = node; n.type !== 'Program'; n = n.parent) {
-        if (!isFunction(n)) continue;
-        var key = keyOf(n).join('.');
-        id.unshift(key);
-    }
-    return id.join('.');
-}
-
-function keyOf (node) {
-    var p = node.parent;
-    var kv = Object.keys(p)
-        .reduce(function (acc, key) {
-            acc.keys.push(key);
-            acc.values.push(p[key]);
-            acc.top.push(undefined);
-            
-            if (Array.isArray(p[key])) {
-                var keys = Object.keys(p[key]);
-                acc.keys.push.apply(acc.keys, keys);
-                acc.values.push.apply(acc.values, p[key]);
-                acc.top.push.apply(
-                    acc.top,
-                    keys.map(function () { return key })
-                );
-            }
-            
-            return acc;
-        }, { keys : [], values : [], top : [] })
-    ;
-    var ix = kv.values.indexOf(node);
-    return [ kv.top[ix], kv.keys[ix] ].filter(Boolean);
-}
 
 function rname () {
     return '__' + (Math.pow(16, 8) * Math.random()).toString(16);
