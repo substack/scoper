@@ -102,6 +102,7 @@ $ node example/attr
      'body.1.callee': [ 6 ],
      'body.1.callee.init': [ 10, 2 ],
      'arguments.0': [ 32 ] },
+  patch: [Function],
   run: [Function] }
 ```
 
@@ -111,9 +112,15 @@ $ node example/attr
 var scoper = require('scoper')
 ```
 
-## var newSrc = scoper(src)
+## var newSrc = scoper(src, opts)
 
 Return a string that rewrites `src` to add scoping instrumentation hooks.
+
+Optionally:
+
+`opts.names` - an object mapping `scope`, `function`, and `literal` keys to
+internal ids to use for names in the rewritten source. By default, these names
+are randomly generated.
 
 ## var c = Function('return ' + newSrc)()
 
@@ -124,6 +131,12 @@ returned by `scoper()`.
 
 Run the source. You can run the source as many times as you like. You can modify
 the scope attributes before, after, or during a run.
+
+## c.patch(ctx)
+
+Patch the current context with a new context `ctx`.
+`ctx` should have one or more attributes `ctx.scope`, `ctx.function` and
+`ctx.literal` to replace the internal attributes of the current object.
 
 # attributes
 
