@@ -1,6 +1,6 @@
 {
   "name": "scoper",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "modify nested scope at runtime",
   "main": "index.js",
   "directories": {
